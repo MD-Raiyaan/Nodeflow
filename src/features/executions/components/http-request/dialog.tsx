@@ -38,31 +38,27 @@ const formSchema = z.object({
   body: z.string().optional(), //.refine() todo JSON
 });
 
-export type formType = z.infer<typeof formSchema>;
+export type HttpRequestFormValues = z.infer<typeof formSchema>;
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: formType) => void;
-  defaultEndpoint?: string;
-  defaultMethod?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  defaultBody?: string;
+  onSubmit: (values: HttpRequestFormValues) => void;
+  defaultValues?:Partial<HttpRequestFormValues>
 }
 
 export const HTTPRequestDialog = ({
   open,
   onOpenChange,
   onSubmit,
-  defaultEndpoint = "",
-  defaultMethod = "GET",
-  defaultBody = "",
+  defaultValues={}
 }: Props) => {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      endpoint: defaultEndpoint,
-      method: defaultMethod,
-      body: defaultBody,
+      endpoint: defaultValues.endpoint,
+      method: defaultValues.method,
+      body: defaultValues.body,
     },
   });
 
@@ -77,12 +73,12 @@ export const HTTPRequestDialog = ({
   useEffect(() => {
     if (open) {
       form.reset({
-        endpoint: defaultEndpoint,
-        method: defaultMethod,
-        body: defaultBody,
+        endpoint: defaultValues.endpoint,
+        method: defaultValues.method,
+        body: defaultValues.body,
       });
     }
-  }, [open, defaultEndpoint, defaultBody, defaultMethod]);
+  }, [open,defaultValues]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

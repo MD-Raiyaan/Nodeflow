@@ -1,28 +1,46 @@
+import { NonRetriableError } from "inngest";
 import { inngest } from "./client";
 import prisma from "@/lib/db";
-import { createGoogleGenerativeAI, google } from "@ai-sdk/google";
-import {generateText} from "ai";
+import { topologicalSort } from "./utils";
+import { NodeType } from "@/generated/prisma/enums";
+import { getExecutor } from "@/features/executions/lib/executor-registry";
 
-export const helloWorld = inngest.createFunction(
-  { id: "execute-ai" },
-  { event: "execute/ai" },
+export const executeWorflow = inngest.createFunction(
+  { id: "execute-workflow" },
+  { event: "workflows/execute.workflow" },
   async ({ event, step }) => {
-    
-    const {steps:geminiSteps}=await step.ai.wrap(
-      "gemini-generate-text",
-      generateText,
-      {
-        model:google("gemini-2.5-flash"),
-        system:"you are a helpful assistant.",
-        prompt:"what is 2+2 ?",
-        experimental_telemetry:{
-          isEnabled:true,
-          recordInputs:true,
-          recordOutputs:true
-        }
-      }
-    )
+     const workflowId=event.data.workflowId;
+     if(!workflowId){
+       throw new NonRetriableError("Workflow ID is missing");
+     }
+     const sortedNodes=await step.run("prepare-worflow",async()=>{
+        const workflow=await prisma.workflow.findUniqueOrThrow({
+           where:{id:workflowId},
+           include:{
+             nodes:true,
+             connections:true,
+           }
+        });
+        return topologicalSort(workflow.nodes,workflow.connections);
+     });
+     
+    //  Initialize the context with any initial data from trigger
+     let context=event.data.initialData || {};
 
-    return { geminiSteps };
+     for (const node of sortedNodes){
+       const executor=getExecutor(node.type as NodeType);
+       context=await executor({
+        data:node.data as Record<string,unknown>,
+        nodeId:node.id,
+        context,
+        step,
+       })
+     }
+    
+     return {
+      workflowId,
+      result:context,
+      
+     };
   },
 );
