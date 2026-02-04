@@ -1,9 +1,10 @@
 import type { NodeExecutor } from "@/features/executions/types";
 import { NonRetriableError } from "inngest";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import {generateText} from "ai"
+import { generateText } from "ai";
 import Handlebars from "handlebars";
 import { geminiChannel } from "@/inngest/channels/gemini";
+import prisma from "@/lib/db";
 
 Handlebars.registerHelper("json", (context) => {
   const stringified = JSON.stringify(context, null, 2);
@@ -13,6 +14,7 @@ Handlebars.registerHelper("json", (context) => {
 
 type GeminiData = {
   variableName?: string;
+  credentialId?: string;
   systemPrompt?: string;
   userPrompt?: string;
 };
@@ -31,81 +33,100 @@ export const GeminiExecutor: NodeExecutor<GeminiData> = async ({
     }),
   );
 
-  if(!data.variableName){
+  if (!data.variableName) {
     await publish(
       geminiChannel().status({
         nodeId,
-        status:"error",
-      })
+        status: "error",
+      }),
     );
     throw new NonRetriableError("Variable name is required");
   }
 
-  if(!data.userPrompt){
+  if (!data.userPrompt) {
     await publish(
       geminiChannel().status({
         nodeId,
-        status:"error",
-      })
+        status: "error",
+      }),
     );
     throw new NonRetriableError("User prompt is required");
   }
 
-  // todo : check for credential
-  
-  const systemPrompt=data.systemPrompt
-  ? Handlebars.compile(data.systemPrompt)(context)
-  : "You are a helpful assistant.";
-
-  const userPrompt=Handlebars.compile(data.userPrompt)(context);
-  const credentialValue=process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-
-  // todo : fetch crdential 
-
-  const  google=createGoogleGenerativeAI({
-    apiKey:credentialValue,
-  });  
-
-  try{
-    const {steps}=await step.ai.wrap("gemini-generate-text",
-      generateText,
-      {
-        model:google("gemini-2.5-flash"),
-        system:systemPrompt,
-        prompt:userPrompt,
-        experimental_telemetry:{
-          isEnabled:true,
-          recordInputs:true,
-          recordOutputs:true,
-        }
-      },
-    );
-     
-    const text=steps[0].content[0].type==="text"?
-      steps[0].content[0].text:"";
-    
+  if (!data.credentialId) {
     await publish(
       geminiChannel().status({
         nodeId,
-        status:"success",
-      })
+        status: "error",
+      }),
+    );
+    throw new NonRetriableError("CredentialId  is required");
+  }
+
+  const systemPrompt = data.systemPrompt
+    ? Handlebars.compile(data.systemPrompt)(context)
+    : "You are a helpful assistant.";
+
+  const credential = await step.run("get-credential", () => {
+    return prisma.credential.findUnique({
+      where: {
+        id: data.credentialId,
+      },
+    });
+  });
+
+  if (!credential) {
+    await publish(
+      geminiChannel().status({
+        nodeId,
+        status: "error",
+      }),
+    );
+    throw new NonRetriableError("CredentialId not found");
+  }
+
+  const userPrompt = Handlebars.compile(data.userPrompt)(context);
+  const credentialValue = credential.value;
+
+  const google = createGoogleGenerativeAI({
+    apiKey: credentialValue,
+  });
+
+  try {
+    const { steps } = await step.ai.wrap("gemini-generate-text", generateText, {
+      model: google("gemini-2.5-flash"),
+      system: systemPrompt,
+      prompt: userPrompt,
+      experimental_telemetry: {
+        isEnabled: true,
+        recordInputs: true,
+        recordOutputs: true,
+      },
+    });
+
+    const text =
+      steps[0].content[0].type === "text" ? steps[0].content[0].text : "";
+
+    await publish(
+      geminiChannel().status({
+        nodeId,
+        status: "success",
+      }),
     );
 
     return {
       ...context,
-      [data.variableName]:{
+      [data.variableName]: {
         text,
       },
-    }
-
-  }catch(error){
-     await publish(
+    };
+  } catch (error) {
+    await publish(
       geminiChannel().status({
         nodeId,
-        status:"error",
-      })
-     );
-     throw error;
+        status: "error",
+      }),
+    );
+    throw error;
   }
-
 };

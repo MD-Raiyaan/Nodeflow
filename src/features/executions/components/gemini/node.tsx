@@ -8,6 +8,7 @@ import { useNodeStatus } from "../../hooks/use-node-status";
 import { fetchGeminiRealtimeToken } from "./actions";
 
 type GeminiNodeData = {
+  credentialId?:string;
   variableName?: string;
   systemPrompt?: string;
   userPrompt?: string;

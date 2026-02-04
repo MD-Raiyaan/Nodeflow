@@ -24,7 +24,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-
+import { useCredentialByType } from "@/features/credentials/hooks/use-credentials";
+import { CredentialType } from "@/generated/prisma/enums";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Image from "next/image";
 
 const formSchema = z.object({
   variableName: z
@@ -34,28 +37,33 @@ const formSchema = z.object({
       message:
         "Variable name must stat with a letter or underscore and contains only letters,numbers,and underscored",
     }),
+  credentialId: z.string().min(1, "Credential is required"),
   systemPrompt: z.string().optional(),
   userPrompt: z.string().min(1, { message: "User prompt is required" }),
 });
 
-export type OpenAiFormValues = z.infer<typeof formSchema>;
+export type OpenaiFormValues = z.infer<typeof formSchema>;
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: OpenAiFormValues) => void;
-  defaultValues?: Partial<OpenAiFormValues>;
+  onSubmit: (values: OpenaiFormValues) => void;
+  defaultValues?: Partial<OpenaiFormValues>;
 }
 
-export const OpenDialog = ({
+export const OpenAiDialog = ({
   open,
   onOpenChange,
   onSubmit,
   defaultValues = {},
 }: Props) => {
+  const { data: credentials, isLoading: isLoadingCredentials } =
+    useCredentialByType(CredentialType.OPENAI);
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      credentialId: defaultValues.credentialId || "",
       variableName: defaultValues.variableName,
       systemPrompt: defaultValues.systemPrompt || "",
       userPrompt: defaultValues.userPrompt || "",
@@ -72,6 +80,7 @@ export const OpenDialog = ({
   useEffect(() => {
     if (open) {
       form.reset({
+        credentialId: defaultValues.credentialId || "",
         variableName: defaultValues.variableName,
         systemPrompt: defaultValues.systemPrompt,
         userPrompt: defaultValues.userPrompt,
@@ -83,7 +92,7 @@ export const OpenDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>OpenAI configuration</DialogTitle>
+          <DialogTitle>OpenAi configuration</DialogTitle>
           <DialogDescription>
             configure the AI model and prompts for this node.
           </DialogDescription>
@@ -109,7 +118,45 @@ export const OpenDialog = ({
                 </FormItem>
               )}
             />
-
+            <FormField
+              control={form.control}
+              name="credentialId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>OpenAi Credential</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    onOpenChange={field.onBlur}
+                    disabled={isLoadingCredentials || !credentials.length}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {credentials.map((credential) => (
+                        <SelectItem
+                          key={credential.value}
+                          value={credential.value}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src="/openai.svg"
+                              alt="OpenAi"
+                              width={16}
+                              height={16}
+                            />
+                            {credential.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="systemPrompt"

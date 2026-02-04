@@ -138,7 +138,7 @@ export const WorkflowsEmpty = () => {
     <>
       <EmptyView
         onNew={handleCreate}
-        message="No workflowsf found,Create a workflow to get started."
+        message="No workflows found,Create a workflow to get started."
       />
     </>
   );

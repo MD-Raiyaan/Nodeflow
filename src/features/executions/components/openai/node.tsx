@@ -3,11 +3,12 @@
 import { useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import { memo, useState } from "react";
 import { BaseExecutionNode } from "../base-execution-node";
-import { OpenAiFormValues,OpenDialog } from "./dialog";
+import { OpenaiFormValues,OpenAiDialog } from "./dialog";
 import { useNodeStatus } from "../../hooks/use-node-status";
 import { fetchOpenaiRealtimeToken } from "./actions";
 
 type OpenAiNodeData = {
+  credentialId?:string;
   variableName?: string;
   systemPrompt?: string;
   userPrompt?: string;
@@ -30,7 +31,7 @@ export const OpenAiNode = memo((props: NodeProps<OpenAiNodeType>) => {
   const handleOpenSettings = () => setDialogOpen(true);
   const { setNodes } = useReactFlow();
 
-  const handleSubmit = (values: OpenAiFormValues) => {
+  const handleSubmit = (values: OpenaiFormValues) => {
     setNodes((nodes) =>
       nodes.map((node) => {
         if (node.id === props.id) {
@@ -49,7 +50,7 @@ export const OpenAiNode = memo((props: NodeProps<OpenAiNodeType>) => {
 
   return (
     <>
-      <OpenDialog
+      <OpenAiDialog
         open={diaglogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
