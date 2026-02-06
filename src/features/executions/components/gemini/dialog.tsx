@@ -26,7 +26,13 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useCredentialByType } from "@/features/credentials/hooks/use-credentials";
 import { CredentialType } from "@/generated/prisma/enums";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Image from "next/image";
 
 const formSchema = z.object({
@@ -136,10 +142,7 @@ export const GeminiDialog = ({
                     </FormControl>
                     <SelectContent>
                       {credentials.map((credential) => (
-                        <SelectItem
-                          key={credential.value}
-                          value={credential.value}
-                        >
+                        <SelectItem key={credential.id} value={credential.id}>
                           <div className="flex items-center gap-2">
                             <Image
                               src="/gemini.svg"

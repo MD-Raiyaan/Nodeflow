@@ -19,8 +19,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useCredentialsParams } from "../hooks/use-credentials-params";
 import { useEntitySearch } from "../hooks/use-entity-search";
-import { CredentialType, Credential } from "@/generated/prisma/client";
-import { KeyIcon } from "lucide-react";
+import type { CredentialType, Credential } from "@/generated/prisma/client";
 import Image from "next/image";
 
 export const CredentialsList = () => {
@@ -120,9 +119,9 @@ interface CredentialsItemProps {
 }
 
 const credentialLogos: Record<CredentialType, string> = {
-  [CredentialType.OPENAI]: "/openai.svg",
-  [CredentialType.ANTHROPIC]: "/anthropic.svg",
-  [CredentialType.GEMINI]: "/gemini.svg",
+  OPENAI: "/openai.svg",
+  ANTHROPIC: "/anthropic.svg",
+  GEMINI: "/gemini.svg",
 };
 
 export const CredentialsItem = ({ data }: CredentialsItemProps) => {
