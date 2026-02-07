@@ -103,6 +103,10 @@ export const credentialsRouter = createTRPCRouter({
         prisma.credential.count({
           where: {
             userId: ctx.auth.user.id,
+            name:{
+              contains:search,
+              mode:"insensitive"
+            }
           },
         }),
       ]);

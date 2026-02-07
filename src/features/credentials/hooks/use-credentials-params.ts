@@ -1,7 +1,6 @@
+import { useQueryStates } from "nuqs";
+import { credentialsParams } from "../../executions/params";
 
-import {useQueryStates} from "nuqs";
-import { credentialsParams } from "../params";
-
-export const useCredentialsParams=()=>{
-     return useQueryStates(credentialsParams);
-}
+export const useCredentialsParams = () => {
+  return useQueryStates(credentialsParams);
+};
