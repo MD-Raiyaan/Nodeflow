@@ -15,7 +15,8 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useExecutionsParams } from "../hooks/use-executions-params";
 import type { ExecutionStatus, Execution } from "@/generated/prisma/client";
-import { CheckCircle2Icon, ClockIcon, Loader2Icon, XCircleIcon } from "lucide-react";
+import { CheckCircle2Icon, ClockIcon, Loader2Icon, PackageOpenIcon, XCircleIcon } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 
 export const ExecutionsList = () => {
   const executions = useSuspenseExecutions();
@@ -33,8 +34,8 @@ export const ExecutionsList = () => {
 export const ExecutionsHeader = ({ disabled }: { disabled?: boolean }) => {
   return (
     <EntityHeader
-      title="Credentials"
-      description="Create and manage your credentials"
+      title="Executions"
+      description="Monitor your executions"
     />
   );
 };
@@ -72,17 +73,15 @@ export const ExecutionsError = () => {
 };
 
 export const ExecutionsEmpty = () => {
-  const router = useRouter();
-  const handleCreate = () => {
-    router.push(`/executions/new`);
-  };
   return (
-    <>
-      <EmptyView
-        onNew={handleCreate}
-        message="You haven't executed any runs.Get started by running your first workflow"
-      />
-    </>
+    <Empty className="border border-dashed bg-white">
+      <EmptyHeader>
+        <EmptyMedia>
+          <PackageOpenIcon />
+        </EmptyMedia>
+      </EmptyHeader>
+      <EmptyTitle>No Executions</EmptyTitle>
+    </Empty>
   );
 };
 
