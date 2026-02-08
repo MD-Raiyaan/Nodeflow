@@ -26,14 +26,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 
-const RegisterSchema = z.object({
-  email: z.email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
-  confirmPassword:z.string(),
-}).refine((data)=>data.password===data.confirmPassword,{
-    message:"Passwords don't match",
-    path:["confirmPassword"]
-});
+const RegisterSchema = z
+  .object({
+    email: z.email("Please enter a valid email address"),
+    password: z.string().min(1, "Password is required"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type RegisterFormValues = z.infer<typeof RegisterSchema>;
 
@@ -47,20 +49,53 @@ export const RegisterForm = () => {
       confirmPassword: "",
     },
   });
-  const onsubmit = async (values: RegisterFormValues) => {
-     await authClient.signUp.email({
-        name:values.email,
-        email:values.email,
-        password:values.password,
-        callbackURL:"/",
-     },{
-        onSuccess:()=>{
-            router.push("/");
+  const signInGithub = async () => {
+    await authClient.signIn.social(
+      {
+        provider: "github",
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
         },
-        onError:(ctx)=>{
-            toast.error(ctx.error.message);
-        }
-     })
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
+    );
+  };
+  const signInGoogle= async () => {
+    await authClient.signIn.social(
+      {
+        provider: "google",
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
+    );
+  };
+  const onsubmit = async (values: RegisterFormValues) => {
+    await authClient.signUp.email(
+      {
+        name: values.email,
+        email: values.email,
+        password: values.password,
+        callbackURL: "/",
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      },
+    );
   };
 
   const isPending = form.formState.isSubmitting;
@@ -81,6 +116,7 @@ export const RegisterForm = () => {
                     className="w-full"
                     type="button"
                     disabled={isPending}
+                    onClick={signInGithub}
                   >
                     <Image src="/github.svg" alt="" width={20} height={20} />
                     Continue with GitHub
@@ -90,6 +126,7 @@ export const RegisterForm = () => {
                     className="w-full"
                     type="button"
                     disabled={isPending}
+                    onClick={signInGoogle}
                   >
                     <Image src="/google.svg" alt="" width={20} height={20} />
                     Continue with Google

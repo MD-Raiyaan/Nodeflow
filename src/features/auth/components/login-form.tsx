@@ -29,6 +29,36 @@ export const LoginForm=()=>{
             password:""
         },
     });
+    const signInGithub=async()=>{
+       await authClient.signIn.social(
+         {
+           provider: "github",
+         },
+         {
+           onSuccess: () => {
+             router.push("/");
+           },
+           onError: (ctx) => {
+             toast.error(ctx.error.message);
+           },
+         },
+       ); 
+    }
+    const signInGoogle= async () => {
+        await authClient.signIn.social(
+          {
+            provider: "google",
+          },
+          {
+            onSuccess: () => {
+              router.push("/");
+            },
+            onError: (ctx) => {
+              toast.error(ctx.error.message);
+            },
+          },
+        );
+      }
     const onsubmit = async (values:LoginFormValues)=>{
         await authClient.signIn.email({
             email:values.email,
@@ -62,6 +92,7 @@ export const LoginForm=()=>{
                       className="w-full"
                       type="button"
                       disabled={isPending}
+                      onClick={signInGithub}
                     >
                       <Image src="/github.svg" width={20} height={20} alt="" />
                       Continue with GitHub
@@ -71,6 +102,7 @@ export const LoginForm=()=>{
                       className="w-full"
                       type="button"
                       disabled={isPending}
+                      onClick={signInGoogle}
                     >
                       <Image src="/google.svg" alt="" width={20} height={20} />
                       Continue with Google
